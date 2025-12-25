@@ -51,12 +51,12 @@ function init() {
     renderReminders();
     renderNotes();
     renderLogs();
-    
+
     // Request Notification Permission
     if ("Notification" in window) {
         Notification.requestPermission();
     }
-    
+
     // Start the Clock/Scheduler
     setInterval(checkReminders, 1000);
 }
@@ -86,7 +86,7 @@ function navigateTo(targetId) {
     // Hide all views
     Object.values(DOM.views).forEach(view => view.classList.add('hidden'));
     Object.values(DOM.views).forEach(view => view.classList.remove('active'));
-    
+
     // Show target view
     const targetView = document.getElementById(targetId);
     if (targetView) {
@@ -98,7 +98,7 @@ function navigateTo(targetId) {
     DOM.navItems.forEach(item => {
         if (item.dataset.target === targetId) {
             item.classList.add('active');
-            
+
             // Update Title based on view
             const span = item.querySelector('span');
             if (span) DOM.pageTitle.textContent = span.textContent;
@@ -136,12 +136,12 @@ function updateThemeIcon() {
 // --- Scheduler & Logic ---
 function checkReminders() {
     const now = new Date();
-    
+
     state.reminders.forEach(reminder => {
         if (!reminder.active) return;
-        
+
         const reminderTime = new Date(reminder.time);
-        
+
         // Check if time is reached (within a small buffer, e.g., this second)
         // We use a flag 'triggered' to prevent double firing, but simpler is comparing minutes/seconds
         if (now >= reminderTime && !reminder.triggered) {
@@ -180,14 +180,14 @@ function speak(text) {
         alert("Text-to-Speech not supported in this browser.");
         return;
     }
-    
+
     // Cancel any current speaking
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     // You can customize voice, rate, pitch here
     // utterance.rate = 1.0;
-    
+
     window.speechSynthesis.speak(utterance);
 }
 
@@ -200,11 +200,13 @@ function addReminder(text, timeString) {
         active: true,
         triggered: false
     };
-    
+
     state.reminders.push(reminder);
     // Sort logic could go here
     state.reminders.sort((a, b) => new Date(a.time) - new Date(b.time));
-    
+
+    addLog(text, 'Alarm', 'Scheduled'); // LOGGING ADDED
+
     saveData();
     renderReminders();
     navigateTo('view-home');
@@ -218,14 +220,14 @@ function deleteReminder(id) {
 
 function renderReminders() {
     DOM.reminderList.innerHTML = '';
-    
+
     const activeReminders = state.reminders.filter(r => r.active); // active and not triggered
 
     if (activeReminders.length === 0) {
         DOM.homeEmptyState.style.display = 'flex';
         return;
     }
-    
+
     DOM.homeEmptyState.style.display = 'none';
 
     activeReminders.forEach(reminder => {
@@ -257,7 +259,7 @@ window.appDeleteReminder = (id) => deleteReminder(id);
 function startTimer() {
     const minutes = parseInt(DOM.timerMinutes.value);
     const message = DOM.timerMessage.value || "Timer finished";
-    
+
     if (!minutes || minutes <= 0) return;
 
     const seconds = minutes * 60;
@@ -269,7 +271,7 @@ function startTimer() {
     DOM.btnStartTimer.disabled = true;
     DOM.btnStopTimer.disabled = false;
     DOM.timerMinutes.disabled = true;
-    
+
     state.timer.intervalId = setInterval(() => {
         state.timer.remainingSeconds--;
         updateTimerDisplay();
@@ -299,9 +301,9 @@ function updateTimerDisplay() {
     const h = Math.floor(totalSecs / 3600);
     const m = Math.floor((totalSecs % 3600) / 60);
     const s = totalSecs % 60;
-    
-    DOM.timerCountdown.textContent = 
-        `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+
+    DOM.timerCountdown.textContent =
+        `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
 // --- Logs ---
@@ -346,12 +348,25 @@ function renderNotes() {
         const el = document.createElement('div');
         el.className = 'note-item';
         el.innerHTML = `
-            <h3>${note.title}</h3>
+            <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 8px;">
+                 <h3 style="margin:0; flex:1;">${note.title}</h3>
+                 <button class="delete-btn" style="padding:0;" onclick="event.stopPropagation(); appDeleteNote(${note.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
             <p>${note.body}</p>
         `;
         DOM.notesList.appendChild(el);
     });
 }
+
+function deleteNote(id) {
+    state.notes = state.notes.filter(n => n.id !== id);
+    saveData();
+    renderNotes();
+}
+
+window.appDeleteNote = (id) => deleteNote(id);
 
 // --- Event Listeners Setup ---
 function setupEventListeners() {
@@ -371,12 +386,12 @@ function setupEventListeners() {
         e.preventDefault();
         const text = DOM.addReminderForm.querySelector('#reminder-text').value;
         const time = DOM.addReminderForm.querySelector('#reminder-time').value;
-        if(text && time) {
+        if (text && time) {
             addReminder(text, time);
             DOM.addReminderForm.reset();
         }
     });
-    
+
     document.getElementById('cancel-add').addEventListener('click', () => {
         DOM.addReminderForm.reset();
         navigateTo('view-home');
@@ -399,18 +414,18 @@ function setupEventListeners() {
     document.getElementById('save-note').addEventListener('click', () => {
         const title = document.getElementById('note-title').value;
         const body = document.getElementById('note-body').value;
-        if(title || body) {
+        if (title || body) {
             state.notes.unshift({ id: Date.now(), title, body });
             saveData();
             renderNotes();
-            
+
             // clear
             document.getElementById('note-title').value = '';
             document.getElementById('note-body').value = '';
             DOM.noteEditor.classList.add('hidden');
         }
     });
-    
+
     // Clear Logs
     document.getElementById('clear-logs').addEventListener('click', () => {
         state.logs = [];
