@@ -31,6 +31,23 @@
 
             <!-- Home View (Upcoming Reminders) -->
             <section id="view-home" class="view active">
+                <!-- Smart Dashboard (Hero Card) -->
+                <div id="hero-dashboard" class="hero-card hidden">
+                    <div class="hero-content">
+                        <span class="hero-label">Next Reminder</span>
+                        <h2 id="hero-countdown">00:00:00</h2>
+                        <p id="hero-message">Message...</p>
+                    </div>
+                </div>
+                <!-- Smart Dashboard (Hero Card) -->
+                <div id="hero-dashboard" class="hero-card hidden">
+                    <div class="hero-content">
+                        <span class="hero-label">Next Reminder</span>
+                        <h2 id="hero-countdown">00:00:00</h2>
+                        <p id="hero-message">Message...</p>
+                    </div>
+                </div>
+
                 <div class="empty-state" id="home-empty-state">
                     <i class="fas fa-bell-slash"></i>
                     <p>No upcoming reminders</p>
@@ -61,9 +78,19 @@
 
             <!-- Timer View -->
             <section id="view-timer" class="view hidden">
-                <div class="timer-display">
-                    <span id="timer-countdown">00:00:00</span>
+                <div class="timer-container">
+                    <!-- SVG Progress Ring -->
+                    <svg class="timer-ring" width="240" height="240">
+                        <circle class="timer-ring-bg" stroke="#e6e6e6" stroke-width="12" fill="transparent" r="100"
+                            cx="120" cy="120" />
+                        <circle id="timer-progress" class="timer-ring-progress" stroke="var(--primary-color)"
+                            stroke-width="12" fill="transparent" r="100" cx="120" cy="120" />
+                    </svg>
+                    <div class="timer-text-overlay">
+                        <span id="timer-countdown">00:00:00</span>
+                    </div>
                 </div>
+
                 <div class="form-group">
                     <input type="number" id="timer-minutes" placeholder="Minutes" min="1">
                 </div>
@@ -131,6 +158,27 @@
                 <span>Logs</span>
             </button>
         </nav>
+
+        <!-- Toast Container -->
+        <div id="toast-container"></div>
+
+        <!-- Full Screen Alarm Overlay -->
+        <div id="alarm-overlay" class="alarm-overlay hidden">
+            <div class="alarm-content">
+                <div class="pulse-circle"></div>
+                <i class="fas fa-bell alarm-icon"></i>
+                <h2 id="alarm-text-display">Reminder!</h2>
+                <p>Time to act.</p>
+                <div class="alarm-actions">
+                    <button id="btn-stop-alarm" class="btn-danger-large">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                    <button id="btn-snooze-alarm" class="btn-secondary-large">
+                        <i class="fas fa-clock"></i> Snooze 5m
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Hidden Audio Element for iOS/Mobile Wake Lock trick (optional) -->
         <audio id="silent-audio" loop>
