@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Voice-Based Reminder and Alarm App">
+    <meta name="theme-color" content="#6200ea">
+    <title>Voice Reminder</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 id="page-title">Reminders</h1>
+            <button id="theme-toggle" aria-label="Toggle Dark Mode">
+                <i class="fas fa-moon"></i>
+            </button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Views will be injected here via JS -->
+
+            <!-- Home View (Upcoming Reminders) -->
+            <section id="view-home" class="view active">
+                <div class="empty-state" id="home-empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No upcoming reminders</p>
+                </div>
+                <ul id="reminder-list" class="reminder-list">
+                    <!-- Reminder Items go here -->
+                </ul>
+            </section>
+
+            <!-- Add Reminder View -->
+            <section id="view-add" class="view hidden">
+                <form id="add-reminder-form">
+                    <div class="form-group">
+                        <label for="reminder-text">Message to Speak</label>
+                        <textarea id="reminder-text" placeholder="e.g., Take your medicine" required
+                            rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="reminder-time">Time</label>
+                        <input type="datetime-local" id="reminder-time" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancel-add">Cancel</button>
+                        <button type="submit" class="btn-primary">Set Reminder</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Timer View -->
+            <section id="view-timer" class="view hidden">
+                <div class="timer-display">
+                    <span id="timer-countdown">00:00:00</span>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="timer-minutes" placeholder="Minutes" min="1">
+                </div>
+                <div class="form-group">
+                    <input type="text" id="timer-message" placeholder="Message when done">
+                </div>
+                <div class="timer-controls">
+                    <button id="start-timer" class="btn-primary"><i class="fas fa-play"></i> Start</button>
+                    <button id="stop-timer" class="btn-secondary" disabled><i class="fas fa-stop"></i> Stop</button>
+                </div>
+            </section>
+
+            <!-- Notes View -->
+            <section id="view-notes" class="view hidden">
+                <button id="btn-new-note" class="btn-primary full-width mb-1"><i class="fas fa-plus"></i> New
+                    Note</button>
+                <div id="notes-list" class="notes-grid">
+                    <!-- Notes go here -->
+                </div>
+            </section>
+            <!-- Note Editor (Overlay/Modal style) -->
+            <div id="note-editor" class="modal hidden">
+                <div class="modal-content">
+                    <input type="text" id="note-title" placeholder="Title">
+                    <textarea id="note-body" placeholder="Write your note here..."></textarea>
+                    <div class="modal-actions">
+                        <button id="cancel-note" class="btn-secondary">Close</button>
+                        <button id="save-note" class="btn-primary">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs View -->
+            <section id="view-logs" class="view hidden">
+                <div class="logs-header">
+                    <h2>History</h2>
+                    <button id="clear-logs" class="btn-small">Clear</button>
+                </div>
+                <ul id="logs-list" class="logs-list">
+                    <!-- Logs go here -->
+                </ul>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-target="view-home">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" data-target="view-add">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add</span>
+            </button>
+            <button class="nav-item" data-target="view-timer">
+                <i class="fas fa-hourglass-half"></i>
+                <span>Timer</span>
+            </button>
+            <button class="nav-item" data-target="view-notes">
+                <i class="fas fa-sticky-note"></i>
+                <span>Notes</span>
+            </button>
+            <button class="nav-item" data-target="view-logs">
+                <i class="fas fa-history"></i>
+                <span>Logs</span>
+            </button>
+        </nav>
+
+        <!-- Hidden Audio Element for iOS/Mobile Wake Lock trick (optional) -->
+        <audio id="silent-audio" loop>
+            <source
+                src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD//////////////////////////////////////////////////////////////////wAAAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+                type="audio/mpeg">
+        </audio>
+    </div>
+
+    <script src="app.js" defer></script>
+</body>
+
+</html>
