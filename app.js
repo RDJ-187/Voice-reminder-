@@ -260,7 +260,16 @@ function snoozeAlarmUI() {
     if (state.activeAlarm) {
         const now = new Date();
         now.setMinutes(now.getMinutes() + 5);
-        addReminder(state.activeAlarm.text, now.toISOString().slice(0, 16));
+
+        // Format to local ISO-like string YYYY-MM-DDTHH:mm
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const timeString = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+        addReminder(state.activeAlarm.text, timeString);
         showToast('Snoozed for 5 mins');
     }
 }
@@ -313,8 +322,7 @@ function deleteReminder(id) {
 
 function renderReminders() {
     DOM.reminderList.innerHTML = '';
-
-    const activeReminders = state.reminders.filter(r => r.active); // active and not triggered
+    const activeReminders = state.reminders.filter(r => r.active);
 
     if (activeReminders.length === 0) {
         DOM.reminderList.innerHTML = `
@@ -327,11 +335,9 @@ function renderReminders() {
                 </button>
             </div>
         `;
-        DOM.homeEmptyState.style.display = 'none'; // Hide the old static one
+        if (DOM.homeEmptyState) DOM.homeEmptyState.style.display = 'none';
         return;
     }
-
-    // Safety cleanup if we switch back
     if (DOM.homeEmptyState) DOM.homeEmptyState.style.display = 'none';
 
     activeReminders.forEach(reminder => {
@@ -341,7 +347,6 @@ function renderReminders() {
 
         const el = document.createElement('li');
         el.className = 'reminder-item';
-        // HTML Structure for Swipe: [Background Action] + [Foreground Content]
         el.innerHTML = `
             <div class="swipe-action">
                 <i class="fas fa-trash"></i>
@@ -349,7 +354,6 @@ function renderReminders() {
             <div class="reminder-content" id="rem-content-${reminder.id}">
                 <div class="reminder-header">
                     <span class="reminder-time">${timeStr}</span>
-                     <!-- Keep click delete for desktop fallback -->
                     <button class="delete-btn" onclick="appDeleteReminder(${reminder.id})">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -359,35 +363,8 @@ function renderReminders() {
             </div>
         `;
 
-        // --- Swipe Logic (Phase 5) ---
         const content = el.querySelector('.reminder-content');
-        let startX, currentX;
-
-        content.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-            content.style.transition = 'none'; // Instant movement
-        });
-
-        content.addEventListener('touchmove', (e) => {
-            currentX = e.touches[0].clientX;
-            const diff = currentX - startX;
-            if (diff < 0) { // Only swipe left
-                content.style.transform = `translateX(${diff}px)`;
-            }
-        });
-
-        content.addEventListener('touchend', (e) => {
-            const diff = currentX - startX;
-            content.style.transition = 'transform 0.3s ease-out';
-
-            if (diff < -100) { // Threshold to delete
-                content.style.transform = `translateX(-100%)`; // Fly out
-                setTimeout(() => deleteReminder(reminder.id), 300);
-            } else {
-                content.style.transform = `translateX(0)`; // Snap back
-            }
-        });
-
+        attachSwipe(content, () => deleteReminder(reminder.id));
         DOM.reminderList.appendChild(el);
     });
 }
@@ -474,18 +451,71 @@ function renderLogs() {
     state.logs.forEach(log => {
         const date = new Date(log.timestamp);
         const el = document.createElement('li');
-        el.className = 'log-item';
+        el.className = 'log-item reminder-item'; // Reuse reminder-item for swipe structure
+
         el.innerHTML = `
-             <div class="reminder-header">
-                <strong>${log.type}</strong>
-                <span class="badge">${log.status}</span>
+             <div class="swipe-action">
+                <i class="fas fa-trash"></i>
             </div>
-            <div>${log.text}</div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
-                ${date.toLocaleString()}
+            <div class="reminder-content">
+                 <div class="reminder-header">
+                    <strong>${log.type}</strong>
+                    <span class="badge" style="margin-left:auto;">${log.status}</span>
+                </div>
+                <div>${log.text}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+                    ${date.toLocaleString()}
+                </div>
             </div>
         `;
+
+        const content = el.querySelector('.reminder-content');
+        attachSwipe(content, () => deleteLog(log.id));
         DOM.logsList.appendChild(el);
+    });
+}
+
+function deleteLog(id) {
+    state.logs = state.logs.filter(l => l.id !== id);
+    saveData();
+    renderLogs();
+    showToast('Log Entry Deleted');
+}
+
+// --- Swipe Helper ---
+function attachSwipe(element, callback) {
+    let startX, currentX;
+
+    element.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        element.style.transition = 'none';
+    }, { passive: true }); // passive for scroll performance
+
+    element.addEventListener('touchmove', (e) => {
+        currentX = e.touches[0].clientX;
+        const diff = currentX - startX;
+
+        // Only allow left swipe
+        if (diff < 0) {
+            element.style.transform = `translateX(${diff}px)`;
+        }
+    }, { passive: true });
+
+    element.addEventListener('touchend', (e) => {
+        // safety check
+        if (!startX || !currentX) return;
+
+        const diff = currentX - startX;
+        element.style.transition = 'transform 0.3s ease-out';
+
+        if (diff < -100) { // Threshold
+            element.style.transform = `translateX(-100%)`;
+            setTimeout(() => callback(), 300);
+        } else {
+            element.style.transform = `translateX(0)`;
+        }
+        startX = null;
+        currentX = null;
     });
 }
 
@@ -501,7 +531,7 @@ function renderNotes() {
                  <h3 style="margin:0; flex:1;">${note.title}</h3>
                  <div style="display:flex; gap: 8px;">
                     <!-- Phase 5: Convert to Reminder -->
-                    <button class="delete-btn" style="color:var(--primary-color);" onclick="convertNoteToReminder('${note.body.replace(/'/g, "\\'")}')">
+                    <button class="delete-btn" style="color:var(--primary-color);" onclick="convertNoteToReminder(${note.id})">
                         <i class="fas fa-bell"></i>
                     </button>
                     <button class="delete-btn" onclick="event.stopPropagation(); appDeleteNote(${note.id})">
@@ -515,10 +545,15 @@ function renderNotes() {
     });
 }
 
-function convertNoteToReminder(text) {
+function convertNoteToReminder(id) {
+    const note = state.notes.find(n => n.id === id);
+    if (!note) return;
+
     navigateTo('view-add');
     const input = document.getElementById('reminder-text');
-    if (input) input.value = text;
+    // Pre-fill "Title: Body" or just Title if logic preferred
+    if (input) input.value = note.title;
+    // Or note.body, user can edit. keeping it simple.
 }
 
 function deleteNote(id) {

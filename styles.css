@@ -654,3 +654,14 @@ textarea {
     z-index: 1;
 }
 
+
+/* --- Fix: Mobile Swipe Handling --- */
+.reminder-content {
+    touch-action: pan-y; /* Allow vertical scroll, handle horizontal in JS */
+    cursor: grab;
+}
+
+.reminder-content:active {
+    cursor: grabbing;
+}
+
